@@ -10,7 +10,7 @@ const path = require("path");
 const _multer = require("multer");
 const _upload = _multer({ dest: "img/signatures/dest/" }); // Store uploaded images in 'uploads' directory
 
-app.use(_express.json());
+app.use(_express.json({ limit: "10mb" })); // Adjust size as needed
 
 app.use(cors());
 //----------------------------------
