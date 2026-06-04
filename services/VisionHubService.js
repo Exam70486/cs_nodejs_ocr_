@@ -88,7 +88,7 @@ class VisionHubService {
       const { filePath } = await this.saveBase64Image(base64Image);
 
       // Perform OCR on the saved image
-      const text = await this.recognizeText(filePath);
+      const text    = await this.recognizeText(filePath);
       const message = "Text from image: " + text;
       console.debug(message);
 
@@ -112,32 +112,21 @@ class VisionHubService {
    */
   static async doCv(base64Image, res) {
     try {
-      // Extract the base64 data to get the image buffer
-      const matches = base64Image.match(
-        /^data:image\/([A-Za-z-+/]+);base64,(.+)$/
-      );
 
-      if (!matches) {
-        return res.status(400).json({ error: "Invalid base64 image format" });
-      }
+      // Save the image to disk first
+      const { filePath } = await this.saveBase64Image(base64Image);
 
-      //
-      const base64Data  = matches[2];
-      const imageBuffer = Buffer.from(base64Data, "base64");
+      // BEGIN COMPUTER VISION LOGIN
 
-      // Detect shapes directly from buffer (no need to save to disk)
-      const shapes = "[Triangle],[Circle],[Square],[Rectangle]";
 
-      // Prepare response
-      const summary = this.summarizeShapes(shapes);
+      // END COMPUTER VISION LOGIG
 
-      res.status(200).json({
-        success   : true,
-        shapes    : shapes,
-        count     : shapes.length,
-        summary   : summary,
-        timestamp : new Date().toISOString(),
-      });
+      // RETURN RESULT 
+      const shapes  = ["Triangle", "Circle", "Square", "Rectangle"];
+      const message = "Detected Shapes : " + shapes;
+      console.debug(message);
+
+      res.status(200).json({ message: message });
 
     } catch (error) {
       console.error("CV Processing Error:", error);
@@ -146,39 +135,6 @@ class VisionHubService {
         error: error.message,
       });
     }
-  }
-
-  /**
-   * Helper function to summarize detected shapes
-   * @param {string[]} shapes - Array of detected shapes
-   * @returns {Object} - Summary counts of each shape type
-   */
-  static summarizeShapes(shapes) {
-    const summary = {
-      triangles   : 0,
-      squares     : 0,
-      rectangles  : 0,
-      circles     : 0,
-    };
-
-    shapes.forEach((shape) => {
-      switch (shape) {
-        case "[Triangle]":
-          summary.triangles++;
-          break;
-        case "[Square]":
-          summary.squares++;
-          break;
-        case "[Rectangle]":
-          summary.rectangles++;
-          break;
-        case "[Circle]":
-          summary.circles++;
-          break;
-      }
-    });
-
-    return summary;
   }
 }
 
