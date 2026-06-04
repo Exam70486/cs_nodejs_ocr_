@@ -36,22 +36,21 @@ app.post("/upload", (req, res) => {
   // Handle the base64 image data as needed (e.g., save to disk, process, etc.)
   // ...
   // Base64-encoded image data
-  const base64Image = req.body.base64Image;
+  const base64Image   = req.body.base64Image;
 
   // Extract the file extension and data from the base64 string
-  const matches = base64Image.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
+  const matches       = base64Image.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
   const fileExtension = matches[1];
-  const base64Data = matches[2];
+  const base64Data    = matches[2];
 
   // Create a buffer from the base64 data
-  const imageBuffer = Buffer.from(base64Data, "base64");
+  const imageBuffer   = Buffer.from(base64Data, "base64");
 
   // Create a unique filename based on timestamp
-  const filename = `image_${Date.now()}.${fileExtension}`;
+  const filename      = `image_${Date.now()}.${fileExtension}`;
 
   // Specify the file path where the image will be saved
-  //const filePath      = path.join('img/signatures/dest/', 'images', filename); // Adjust the directory as needed
-  const filePath = path.join("img/signatures/", "dest", filename); // Adjust the directory as needed
+  const filePath      = path.join("img/signatures/", "dest", filename); // Adjust the directory as needed
 
   // Write the buffer to a file
   fs.writeFile(filePath, imageBuffer, (err) => {
@@ -63,6 +62,14 @@ app.post("/upload", (req, res) => {
   });
   //
   doOcr(filePath, res);
+});
+
+//----------------------------------
+// DRIVER CODE
+//----------------------------------
+//
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
 });
 
 /*
@@ -117,10 +124,3 @@ app.get("/functionCall/", (req, res) => {
 })();
 */
 
-//----------------------------------
-// DRIVER CODE
-//----------------------------------
-//
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-});
