@@ -1,14 +1,14 @@
 //----------------------------------
 //----------------------------------
 //
-const _express = require("express");
-const app = _express();
-const cors = require("cors");
-const port = 3000;
-const fs = require("fs");
-const path = require("path");
-const _multer = require("multer");
-const _upload = _multer({ dest: "img/signatures/dest/" }); // Store uploaded images in 'uploads' directory
+const _express   = require("express");
+const app        = _express();
+const cors       = require("cors");
+const port       = 3000;
+const fs         = require("fs");
+const path       = require("path");
+const _multer    = require("multer");
+const _upload    = _multer({ dest: "img/signatures/dest/" }); // Store uploaded images in 'uploads' directory
 
 app.use(_express.json({ limit: "10mb" })); // Adjust size as needed
 
@@ -31,13 +31,6 @@ function doOcr(p_imagePath, res) {
   //
   return recognizeText(p_imagePath, res);
 }
-//
-app.post("/uploadFromUIX", _upload.single("image"), (req, res) => {
-  const imagePath = req.file.path; // Access path of uploaded image
-  console.debug("Image uploaded successfully:", imagePath);
-  res.send("Image uploaded successfully");
-  const msg = doOcr(imagePath);
-});
 //
 app.post("/upload", (req, res) => {
   // Handle the base64 image data as needed (e.g., save to disk, process, etc.)
@@ -71,6 +64,16 @@ app.post("/upload", (req, res) => {
   //
   doOcr(filePath, res);
 });
+
+/*
+//
+app.post("/uploadFromUIX", _upload.single("image"), (req, res) => {
+  const imagePath = req.file.path; // Access path of uploaded image
+  console.debug("Image uploaded successfully:", imagePath);
+  res.send("Image uploaded successfully");
+  const msg = doOcr(imagePath);
+});
+
 // index
 async function GetIndex() {
   //
@@ -112,6 +115,8 @@ app.get("/functionCall/", (req, res) => {
   //
   console.log(result);
 })();
+*/
+
 //----------------------------------
 // DRIVER CODE
 //----------------------------------
