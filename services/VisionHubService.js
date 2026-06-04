@@ -1,47 +1,41 @@
 // services/VisionHubService.js
 const Tesseract = require("tesseract.js");
-const fs = require("fs");
-const path = require("path");
-const cv = require('opencv.js');  // Pure JavaScript, no compilation needed!
+const fs        = require("fs");
+const path      = require("path");
+const cv        = require('opencv.js');  // Pure JavaScript, no compilation needed!
+
+// Now load opencv.js (it will think it's in a browser)
+//let cv = null;
+
+// Function to load opencv.js asynchronously
+function loadOpenCV() {
+  return new Promise((resolve, reject) => {
+    if (cv && cv.imread) {
+      resolve(cv);
+      return;
+    }
+    
+    // Require opencv.js - it will use the global DOM objects we set up
+    try {
+      cv = require('opencv.js');
+      
+      // Wait for OpenCV to be ready
+      if (cv && cv.Mat) {
+        console.log('OpenCV.js loaded successfully in Node.js environment');
+        resolve(cv);
+      } else {
+        reject(new Error('OpenCV.js failed to initialize'));
+      }
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
 
 class VisionHubService {
   //============================================================================
-  // OCR FUNCTIONS
+  // COMMON UTILITIES
   //============================================================================
-
-  /**
-   * Performs OCR on an image file and returns the recognized text
-   * @param {string} imagePath - Path to the image file
-   * @returns {Promise<string>} - The recognized text from the image
-   */
-  static async recognizeText(imagePath) {
-    try {
-      const {
-        data: { text },
-      } = await Tesseract.recognize(imagePath, "eng");
-      return text;
-    } catch (error) {
-      throw new Error(`OCR recognition failed: ${error.message}`);
-    }
-  }
-
-  /**
-   * Performs OCR and sends response to client
-   * @param {string} imagePath - Path to the image file
-   * @param {Object} res - Express response object
-   * @returns {Promise<void>}
-   */
-  static async doOcr(imagePath, res) {
-    try {
-      const text = await this.recognizeText(imagePath);
-      const message = "Text from image: " + text;
-      console.debug(message);
-      res.status(200).json({ message: message });
-    } catch (error) {
-      console.error("OCR Error:", error);
-      res.status(500).json({ error: "Failed to process image" });
-    }
-  }
 
   /**
    * Saves a base64 image to disk
@@ -70,22 +64,78 @@ class VisionHubService {
       // Specify the file path where the image will be saved
       const filePath = path.join("img/signatures/", "dest", filename);
 
+      // Ensure directory exists
+      const dir = path.dirname(filePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
       // Write the buffer to a file
       fs.writeFile(filePath, imageBuffer, (err) => {
         if (err) {
           reject(err);
         } else {
           console.log("Image saved successfully:", filePath);
-          resolve({ filePath, fileExtension });
+          resolve({ filePath, fileExtension, imageBuffer });
         }
       });
     });
   }
 
+ 
   //============================================================================
-  // COMPUTER VISION (CV) FUNCTIONS
+  // OCR FUNCTIONS
   //============================================================================
 
+  /**
+   * Performs OCR on an image file and returns the recognized text
+   * @param {string} imagePath - Path to the image file
+   * @returns {Promise<string>} - The recognized text from the image
+   */
+  static async recognizeText(imagePath) {
+    try {
+      const {
+        data: { text },
+      } = await Tesseract.recognize(imagePath, "eng");
+      return text;
+    } catch (error) {
+      throw new Error(`OCR recognition failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Performs OCR and sends response to client
+   * @param {string} base64Image - Base64 encoded image data
+   * @param {Object} res - Express response object
+   * @returns {Promise<void>}
+   */
+  static async doOcr(base64Image, res) {
+    try {
+      // Save the image to disk first
+      const { filePath } = await this.saveBase64Image(base64Image);
+      
+      // Perform OCR on the saved image
+      const text = await this.recognizeText(filePath);
+      const message = "Text from image: " + text;
+      console.debug(message);
+      
+      res.status(200).json({ message: message });
+    } catch (error) {
+      console.error("OCR Error:", error);
+      res.status(500).json({ error: "Failed to process image" });
+    }
+  }
+
+  //============================================================================
+  // COMPUTER VISION (CV) FUNCTIONS - Using opencv.js
+  //============================================================================
+
+ 
+  /**
+   * Detects shapes in an image using OpenCV.js
+   * @param {Buffer} imageBuffer - Image buffer
+   * @returns {Promise<string[]>} - Array of detected shapes
+   */
   static async detectShapes(imageBuffer) {
     // IMPORTANT: opencv.js needs to be initialized
     // This requires a more complex setup because opencv.js expects a browser environment
@@ -150,19 +200,14 @@ class VisionHubService {
   }
 
   /**
-   * Main CV function that processes base64 image and returns shape detection results
+   * Performs CV shape detection and sends response to client
    * @param {string} base64Image - Base64 encoded image data
    * @param {Object} res - Express response object
    * @returns {Promise<void>}
    */
   static async doCv(base64Image, res) {
     try {
-      // Validate input
-      if (!base64Image) {
-        return res.status(400).json({ error: "No image provided" });
-      }
-
-      // Extract the base64 data
+      // Extract the base64 data to get the image buffer
       const matches = base64Image.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
       
       if (!matches) {
@@ -170,12 +215,14 @@ class VisionHubService {
       }
       
       const base64Data = matches[2];
-      
-      // Convert base64 to buffer
       const imageBuffer = Buffer.from(base64Data, 'base64');
       
-      // Detect shapes
+      // Detect shapes directly from buffer (no need to save to disk)
       const shapes = await this.detectShapes(imageBuffer);
+      
+      // Also save a copy to disk for reference (optional)
+      const { filePath } = await this.saveBase64Image(base64Image);
+      console.log("Image also saved to:", filePath);
       
       // Prepare response
       const summary = this.summarizeShapes(shapes);
@@ -230,5 +277,11 @@ class VisionHubService {
     return summary;
   }
 }
+
+// Initialize OpenCV on service load
+loadOpenCV().catch(err => {
+  console.error('Failed to load OpenCV.js:', err);
+  console.log('Note: OpenCV.js will be loaded on first use instead');
+});
 
 module.exports = VisionHubService;
