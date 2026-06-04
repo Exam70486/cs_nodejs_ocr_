@@ -2,7 +2,7 @@
 const Tesseract = require("tesseract.js");
 const fs        = require("fs");
 const path      = require("path");
-
+const cv        = require('@u4/opencv4nodejs');
 
 class VisionHubService {
   //============================================================================
@@ -103,6 +103,68 @@ class VisionHubService {
   // COMPUTER VISION (CV) FUNCTIONS - Using opencv.js
   //============================================================================
 
+  /**
+   * Detects shapes in an image using OpenCV
+   * @param {string} imagePath - Path to the image file
+   * @returns {Promise<string[]>} - Array of detected shapes
+   */
+  static async detectShapes(imagePath) {
+    const shapes = [];
+
+    try {
+      // Read the image from disk
+      const src = await cv.imreadAsync(imagePath);
+      
+      // Convert to grayscale
+      const gray = await src.cvtColor(cv.COLOR_BGR2GRAY);
+      
+      // Apply Canny edge detector
+      const edges = await gray.canny(50, 150, 3, false);
+      
+      // Find contours
+      const contours = await edges.findContours(cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+      
+      // Iterate over contours and classify shapes
+      for (let i = 0; i < contours.length; i++) {
+        const contour = contours[i];
+        
+        // Calculate epsilon for polygon approximation
+        const epsilon = 0.04 * contour.arcLength(true);
+        
+        // Approximate contour to polygon
+        const approx = contour.approxPolyDP(epsilon, true);
+        
+        let shape = '';
+        
+        // Classify based on number of vertices
+        if (approx.length === 3) {
+          shape = 'Triangle';
+        } else if (approx.length === 4) {
+          // Calculate aspect ratio for square vs rectangle
+          const rect = contour.boundingRect();
+          const aspectRatio = rect.width / rect.height;
+          shape = (aspectRatio >= 0.95 && aspectRatio <= 1.05) ? 'Square' : 'Rectangle';
+        } else if (approx.length > 4) {
+          shape = 'Circle';
+        }
+        
+        if (shape) {
+          shapes.push(shape);
+        }
+      }
+      
+      // Release resources
+      //src.delete();
+      //gray.delete();
+      //edges.delete();
+      
+      return shapes;
+      
+    } catch (error) {
+      console.error('Shape detection error:', error);
+      throw new Error(`Shape detection failed: ${error.message}`);
+    }
+  }
  
   /**
    * Performs CV shape detection and sends response to client
@@ -116,17 +178,35 @@ class VisionHubService {
       // Save the image to disk first
       const { filePath } = await this.saveBase64Image(base64Image);
 
-      // BEGIN COMPUTER VISION LOGIN
-
-
-      // END COMPUTER VISION LOGIG
+       // BEGIN COMPUTER VISION LOGIC
+      
+      // Detect shapes using OpenCV
+      const detectedShapes = await this.detectShapes(filePath);
+      
+      // Remove duplicates while preserving order
+      const uniqueShapes = [...new Set(detectedShapes)];
+      
+      // END COMPUTER VISION LOGIC
 
       // RETURN RESULT 
+      const shapes  = uniqueShapes.length > 0 ? uniqueShapes : ["No shapes detected"];
+      const message = "Detected Shapes : " + shapes.join(", ");
+      console.debug(message);
+
+      res.status(200).json({ 
+        success: true,
+        shapes: shapes,
+        count: shapes.length,
+        message: message 
+      });
+
+      // RETURN RESULT 
+      /*
       const shapes  = ["Triangle", "Circle", "Square", "Rectangle"];
       const message = "Detected Shapes : " + shapes;
       console.debug(message);
 
-      res.status(200).json({ message: message });
+      res.status(200).json({ message: message });*/
 
     } catch (error) {
       console.error("CV Processing Error:", error);
