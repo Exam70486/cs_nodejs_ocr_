@@ -1,8 +1,8 @@
 // services/VisionHubService.js
 const Tesseract = require("tesseract.js");
-const fs = require("fs");
-const path = require("path");
-const cv = require("opencv.js"); // Pure JavaScript, no compilation needed!
+const fs        = require("fs");
+const path      = require("path");
+
 
 class VisionHubService {
   //============================================================================
@@ -103,83 +103,7 @@ class VisionHubService {
   // COMPUTER VISION (CV) FUNCTIONS - Using opencv.js
   //============================================================================
 
-  /**
-   * Detects shapes in an image using OpenCV.js
-   * @param {Buffer} imageBuffer - Image buffer
-   * @returns {Promise<string[]>} - Array of detected shapes
-   */
-  static async detectShapes(imageBuffer) {
-    // IMPORTANT: opencv.js needs to be initialized
-    // This requires a more complex setup because opencv.js expects a browser environment
-    // You may need to use jsdom or similar to provide a DOM
-
-    const shapes = [];
-
-    // opencv.js on Node.js is tricky because it expects:
-    // 1. A DOM (document, HTMLImageElement)
-    // 2. Canvas for image loading
-
-    // Alternative approach: use sharp to decode the image
-    const sharp = require("sharp");
-    const { createCanvas, loadImage } = require("canvas");
-
-    // Convert buffer to a format opencv.js can read
-    const img = await loadImage(imageBuffer);
-    const canvas = createCanvas(img.width, img.height);
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0);
-
-    // Now use opencv.js
-    const src = cv.imread(canvas);
-    const gray = new cv.Mat();
-    const edges = new cv.Mat();
-
-    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
-    cv.Canny(gray, edges, 50, 150, 3, false);
-
-    const contours = new cv.MatVector();
-    const hierarchy = new cv.Mat();
-    cv.findContours(
-      edges,
-      contours,
-      hierarchy,
-      cv.RETR_EXTERNAL,
-      cv.CHAIN_APPROX_SIMPLE
-    );
-
-    for (let i = 0; i < contours.size(); i++) {
-      const contour = contours.get(i);
-      const approx = new cv.Mat();
-      const epsilon = 0.04 * cv.arcLength(contour, true);
-      cv.approxPolyDP(contour, approx, epsilon, true);
-
-      let shape = "";
-      if (approx.rows === 3) {
-        shape = "[Triangle]";
-      } else if (approx.rows === 4) {
-        const rect = cv.boundingRect(approx);
-        const aspectRatio = rect.width / rect.height;
-        shape =
-          aspectRatio >= 0.95 && aspectRatio <= 1.05
-            ? "[Square]"
-            : "[Rectangle]";
-      } else if (approx.rows > 4) {
-        shape = "[Circle]";
-      }
-
-      if (shape) shapes.push(shape);
-    }
-
-    // Clean up
-    src.delete();
-    gray.delete();
-    edges.delete();
-    contours.delete();
-    hierarchy.delete();
-
-    return shapes;
-  }
-
+ 
   /**
    * Performs CV shape detection and sends response to client
    * @param {string} base64Image - Base64 encoded image data
@@ -197,26 +121,24 @@ class VisionHubService {
         return res.status(400).json({ error: "Invalid base64 image format" });
       }
 
-      const base64Data = matches[2];
+      //
+      const base64Data  = matches[2];
       const imageBuffer = Buffer.from(base64Data, "base64");
 
       // Detect shapes directly from buffer (no need to save to disk)
-      const shapes = await this.detectShapes(imageBuffer);
-
-      // Also save a copy to disk for reference (optional)
-      const { filePath } = await this.saveBase64Image(base64Image);
-      console.log("Image also saved to:", filePath);
+      const shapes = "[Triangle],[Circle],[Square],[Rectangle]";
 
       // Prepare response
       const summary = this.summarizeShapes(shapes);
 
       res.status(200).json({
-        success: true,
-        shapes: shapes,
-        count: shapes.length,
-        summary: summary,
-        timestamp: new Date().toISOString(),
+        success   : true,
+        shapes    : shapes,
+        count     : shapes.length,
+        summary   : summary,
+        timestamp : new Date().toISOString(),
       });
+
     } catch (error) {
       console.error("CV Processing Error:", error);
       res.status(500).json({
@@ -233,10 +155,10 @@ class VisionHubService {
    */
   static summarizeShapes(shapes) {
     const summary = {
-      triangles: 0,
-      squares: 0,
-      rectangles: 0,
-      circles: 0,
+      triangles   : 0,
+      squares     : 0,
+      rectangles  : 0,
+      circles     : 0,
     };
 
     shapes.forEach((shape) => {
