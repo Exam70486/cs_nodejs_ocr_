@@ -1,41 +1,35 @@
 class FractalEngine {
-  generateJulia(zoomInOut, zoomStep) {
+  // Inside your Node.js FractalEngine class
+  generateJulia(zoomInOut, scale) {
     const width = 800;
     const height = 600;
     const maxIterations = 500;
     const points = [];
 
-    const centerX = 0.0;
-    const centerY = 0.0;
+    // Define the default coordinate bounds (the "world" view)
+    const defaultMin = -1.5;
+    const defaultMax = 1.5;
 
-    let minX = -1.5;
-    let maxX = 1.5;
-    let minY = -1.5;
-    let maxY = 1.5;
+    // Use an absolute scale factor: scale 1 = default, scale > 1 = zoomed in
+    // Ensure scale is at least 1 to prevent errors
+    const currentScale = Math.max(scale, 1.0);
 
-    // zoomInOut=true  → zoom IN  (divide range → smaller window → more detail)
-    // zoomInOut=false → zoom OUT (multiply range → larger window → less detail)
-    if (zoomStep > 1) {
-      if (zoomInOut) {
-        minX = centerX + (minX - centerX) / zoomStep;
-        maxX = centerX + (maxX - centerX) / zoomStep;
-        minY = centerY + (minY - centerY) / zoomStep;
-        maxY = centerY + (maxY - centerY) / zoomStep;
-      } else {
-        minX = centerX + (minX - centerX) * zoomStep;
-        maxX = centerX + (maxX - centerX) * zoomStep;
-        minY = centerY + (minY - centerY) * zoomStep;
-        maxY = centerY + (maxY - centerY) * zoomStep;
-      }
-    }
+    // Calculate new bounds based on absolute scale
+    // By dividing the range by scale, we zoom into the center (0,0)
+    const range = (defaultMax - defaultMin) / currentScale;
+    const minX = -range / 2;
+    const maxX = range / 2;
+    const minY = -range / 2;
+    const maxY = range / 2;
 
     const cRe = -0.4;
     const cIm = 0.6;
 
     for (let screenX = 0; screenX < width; screenX++) {
       for (let screenY = 0; screenY < height; screenY++) {
-        let zRe = minX + (screenX * (maxX - minX)) / width;
-        let zIm = minY + (screenY * (maxY - minY)) / height;
+        // Map screen pixels to complex plane using the new calculated bounds
+        let zRe = minX + (screenX * range) / width;
+        let zIm = minY + (screenY * range) / height;
 
         let iter = 0;
         while (zRe * zRe + zIm * zIm <= 4.0 && iter < maxIterations) {
@@ -48,7 +42,6 @@ class FractalEngine {
 
         const intensity =
           iter === maxIterations ? 0 : Math.floor((iter * 255) / maxIterations);
-
         points.push({ x: screenX, y: screenY, intensity });
       }
     }
