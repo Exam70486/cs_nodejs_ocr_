@@ -10,7 +10,9 @@ class VisionHubService {
 
   static async saveBase64Image(base64Image) {
     return new Promise((resolve, reject) => {
-      const matches = base64Image.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
+      const matches = base64Image.match(
+        /^data:image\/([A-Za-z-+/]+);base64,(.+)$/
+      );
       if (!matches) {
         reject(new Error("Invalid base64 image format"));
         return;
@@ -44,7 +46,9 @@ class VisionHubService {
 
   static async recognizeText(imagePath) {
     try {
-      const { data: { text } } = await Tesseract.recognize(imagePath, "eng");
+      const {
+        data: { text },
+      } = await Tesseract.recognize(imagePath, "eng");
       return text;
     } catch (error) {
       throw new Error(`OCR recognition failed: ${error.message}`);
@@ -74,7 +78,10 @@ class VisionHubService {
       const src = await cv.imreadAsync(imagePath);
       const gray = await src.cvtColor(cv.COLOR_BGR2GRAY);
       const edges = await gray.canny(50, 150, 3, false);
-      const contours = await edges.findContours(cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+      const contours = await edges.findContours(
+        cv.RETR_EXTERNAL,
+        cv.CHAIN_APPROX_SIMPLE
+      );
 
       for (let i = 0; i < contours.length; i++) {
         const contour = contours[i];
@@ -87,7 +94,8 @@ class VisionHubService {
         } else if (approx.length === 4) {
           const rect = contour.boundingRect();
           const aspectRatio = rect.width / rect.height;
-          shape = aspectRatio >= 0.95 && aspectRatio <= 1.05 ? "Square" : "Rectangle";
+          shape =
+            aspectRatio >= 0.95 && aspectRatio <= 1.05 ? "Square" : "Rectangle";
         } else if (approx.length > 4) {
           shape = "Circle";
         }
@@ -108,7 +116,8 @@ class VisionHubService {
       const { filePath } = await this.saveBase64Image(base64Image);
       const detectedShapes = await this.detectShapes(filePath);
       const uniqueShapes = [...new Set(detectedShapes)];
-      const shapes = uniqueShapes.length > 0 ? uniqueShapes : ["No shapes detected"];
+      const shapes =
+        uniqueShapes.length > 0 ? uniqueShapes : ["No shapes detected"];
       const message = "Detected Shapes : " + shapes.join(", ");
       console.debug(message);
 
@@ -174,20 +183,52 @@ class VisionHubService {
     return new cv.Mat(height, width, cv.CV_8UC3, data);
   }
 
-  static async doGenerateJulia(width, height, maxIterations, cReal, cImag, res) {
+  static async doGenerateJulia(
+    width,
+    height,
+    maxIterations,
+    cReal,
+    cImag,
+    res
+  ) {
     try {
-      const img = this.generateJulia(width, height, maxIterations, cReal, cImag);
+      const img = this.generateJulia(
+        width,
+        height,
+        maxIterations,
+        cReal,
+        cImag
+      );
       const imageBuffer = await cv.imencodeAsync(".png", img);
-      const base64Image = `data:image/png;base64,${imageBuffer.toString("base64")}`;
-      res.status(200).json({ success: true, message: "Fractal generated successfully", image: base64Image });
+      const base64Image = `data:image/png;base64,${imageBuffer.toString(
+        "base64"
+      )}`;
+      res.status(200).json({
+        success: true,
+        message: "Fractal generated successfully",
+        image: base64Image,
+      });
     } catch (error) {
       res.status(500).json({ success: false, error: error.message });
     }
   }
 
-  static async generateJuliaImage(width, height, maxIterations, cReal, cImag, res) {
+  static async generateJuliaImage(
+    width,
+    height,
+    maxIterations,
+    cReal,
+    cImag,
+    res
+  ) {
     try {
-      const img = this.generateJulia(width, height, maxIterations, cReal, cImag);
+      const img = this.generateJulia(
+        width,
+        height,
+        maxIterations,
+        cReal,
+        cImag
+      );
       const imageBuffer = await cv.imencodeAsync(".png", img);
       res.set("Content-Type", "image/png");
       res.send(imageBuffer);
@@ -203,7 +244,14 @@ class VisionHubService {
   /**
    * Generates a raw iteration matrix for the Julia Set
    */
-  static generateJuliaPureMath(width, height, maxIterations, cReal, cImag, bounds) {
+  static generateJuliaPureMath(
+    width,
+    height,
+    maxIterations,
+    cReal,
+    cImag,
+    bounds
+  ) {
     const matrix = [];
     const xMin = parseFloat(bounds.xMin);
     const xMax = parseFloat(bounds.xMax);
@@ -223,17 +271,23 @@ class VisionHubService {
         let zImag = cy;
         let iteration = 0;
 
-        while (zReal * zReal + zImag * zImag < 4.0 && iteration < maxIterations) {
+        while (
+          zReal * zReal + zImag * zImag < 4.0 &&
+          iteration < maxIterations
+        ) {
           const nextZReal = zReal * zReal - zImag * zImag + cReal;
           const nextZImag = 2 * zReal * zImag + cImag;
           zReal = nextZReal;
           zImag = nextZImag;
           iteration++;
         }
-        
+
         // If it escapes instantly at the very boundary edges, flag it explicitly as 1
         // instead of 0 to stop the client from confusing it with the inner core.
-        row[x] = (iteration === 0 && (zReal * zReal + zImag * zImag) >= 4.0) ? 1 : iteration;
+        row[x] =
+          iteration === 0 && zReal * zReal + zImag * zImag >= 4.0
+            ? 1
+            : iteration;
       }
       matrix.push(Array.from(row));
     }
@@ -263,14 +317,20 @@ class VisionHubService {
         let zImag = 0.0;
         let iteration = 0;
 
-        while (zReal * zReal + zImag * zImag < 4.0 && iteration < maxIterations) {
+        while (
+          zReal * zReal + zImag * zImag < 4.0 &&
+          iteration < maxIterations
+        ) {
           const nextZReal = zReal * zReal - zImag * zImag + cx;
           const nextZImag = 2 * zReal * zImag + cy;
           zReal = nextZReal;
           zImag = nextZImag;
           iteration++;
         }
-        row[x] = (iteration === 0 && (zReal * zReal + zImag * zImag) >= 4.0) ? 1 : iteration;
+        row[x] =
+          iteration === 0 && zReal * zReal + zImag * zImag >= 4.0
+            ? 1
+            : iteration;
       }
       matrix.push(Array.from(row));
     }

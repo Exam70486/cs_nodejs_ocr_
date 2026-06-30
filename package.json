@@ -19,7 +19,6 @@
     "jsdom": "^19.0.0",
     "multer": "^1.4.5-lts.1",
     "nodaemon": "^0.0.5",
-    "node-webcam": "^0.8.2",
     "nodemon": "^3.0.3",
     "opencv.js": "^1.2.1",
     "optiic": "^0.0.21",
