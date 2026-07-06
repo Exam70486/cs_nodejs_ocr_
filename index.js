@@ -135,6 +135,25 @@ app.get("/api/fractal/julia", (req, res) => {
   res.json(points);
 });
 
+app.get("/api/fractal/mandelbrot", (req, res) => {
+  const xMin = parseFloat(req.query.xMin);
+  const xMax = parseFloat(req.query.xMax);
+  const yMin = parseFloat(req.query.yMin);
+  const yMax = parseFloat(req.query.yMax);
+  const maxIterations = parseInt(req.query.maxIterations, 10) || 500;
+
+  // Fallback to Mandelbrot's default window if bounds are missing/invalid —
+  // mirrors Angular's DEFAULT_BOUNDS_MANDELBROT = { xMin:-2.0, xMax:1.0, yMin:-1.2, yMax:1.2 }
+  const bounds = [xMin, xMax, yMin, yMax].every(Number.isFinite)
+    ? { xMin, xMax, yMin, yMax }
+    : { xMin: -2.0, xMax: 1.0, yMin: -1.2, yMax: 1.2 };
+
+  console.log(`Generating Mandelbrot: bounds=${JSON.stringify(bounds)}, maxIter=${maxIterations}`);
+
+  const points = engine.generateMandelbrot(bounds, maxIterations);
+  res.json(points);
+});
+
 app.get("/api/fractal/leaf", (req, res) => {
   const points = engine.generateLeaf();
   res.json(points);
@@ -154,6 +173,7 @@ app.get("/health", (req, res) => {
       "GET  /api/opencv/generateJulia                 - OpenCv     -- (fractal generation)",
       "GET  /api/opencv/generateJuliaImage            - OpenCv     -- (fractal generation)",
       "GET  /api/fractal/julia                        - Javascript -- (fractal generation)",
+      "GET  /api/fractal/mandelbrot                   - Javascript -- (fractal generation)",
       "GET  /api/fractal/leaf                         - Javascript -- (fractal generation)",
       "GET  /health                                   - Service health check)",
     ],
@@ -181,6 +201,9 @@ app.listen(port, () => {
     ),
     console.log(
       `  GET  /api/fractal/julia             - Javascript   -- (fractal generation)`
+    ),
+    console.log(
+      `  GET  /api/fractal/mandelbrot        - Javascript   -- (fractal generation)`
     ),
     console.log(
       `  GET  /api/fractal/leaf              - Javascript   -- (fractal generation)`

@@ -43,6 +43,49 @@ class FractalEngine {
     return points;
   }
 
+  // Mandelbrot: same escape-time skeleton as generateJulia, but z starts at
+  // (0,0) and the pixel coordinate becomes the constant c (instead of a
+  // fixed cRe/cIm with z0 = pixel coordinate, as Julia does).
+  generateMandelbrot(bounds, maxIterations = 500) {
+    const width  = 800;
+    const height = 600;
+    const points = new Array(width * height);
+
+    const xStep = (bounds.xMax - bounds.xMin) / width;
+    const yStep = (bounds.yMax - bounds.yMin) / height;
+
+    const t0 = Date.now();
+    let idx = 0;
+
+    for (let y = 0; y < height; y++) {
+      const cIm = bounds.yMin + y * yStep;
+
+      for (let x = 0; x < width; x++) {
+        const cRe = bounds.xMin + x * xStep;
+
+        let zRe = 0.0;
+        let zIm = 0.0;
+        let iter = 0;
+
+        while (zRe * zRe + zIm * zIm <= 4.0 && iter < maxIterations) {
+          const nextRe = zRe * zRe - zIm * zIm + cRe;
+          const nextIm = 2.0 * zRe * zIm + cIm;
+          zRe = nextRe;
+          zIm = nextIm;
+          iter++;
+        }
+
+        const intensity =
+          iter === maxIterations ? 0 : Math.floor((iter * 255) / maxIterations);
+
+        points[idx++] = { x, y, intensity };
+      }
+    }
+
+    console.log(`[Node Engine] Mandelbrot ${width * height} points in ${Date.now() - t0}ms`);
+    return points;
+  }
+
   generateLeaf() {
     const points = [];
     const width = 800;
