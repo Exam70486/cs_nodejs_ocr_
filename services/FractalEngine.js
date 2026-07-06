@@ -1,35 +1,27 @@
 class FractalEngine {
-  // Inside your Node.js FractalEngine class
-  generateJulia(zoomInOut, scale) {
-    const width = 800;
+
+  // Mirrors Angular's FractalEngine._runEscapeTimeEngine exactly:
+  // independent xStep/yStep derived from bounds, row-major (y-outer, x-inner) order.
+  generateJulia(bounds, maxIterations = 500) {
+    const width  = 800;
     const height = 600;
-    const maxIterations = 500;
-    const points = [];
+    const points = new Array(width * height);
 
-    // Define the default coordinate bounds (the "world" view)
-    const defaultMin = -1.5;
-    const defaultMax = 1.5;
-
-    // Use an absolute scale factor: scale 1 = default, scale > 1 = zoomed in
-    // Ensure scale is at least 1 to prevent errors
-    const currentScale = Math.max(scale, 1.0);
-
-    // Calculate new bounds based on absolute scale
-    // By dividing the range by scale, we zoom into the center (0,0)
-    const range = (defaultMax - defaultMin) / currentScale;
-    const minX = -range / 2;
-    const maxX = range / 2;
-    const minY = -range / 2;
-    const maxY = range / 2;
+    const xStep = (bounds.xMax - bounds.xMin) / width;
+    const yStep = (bounds.yMax - bounds.yMin) / height;
 
     const cRe = -0.4;
     const cIm = 0.6;
 
-    for (let screenX = 0; screenX < width; screenX++) {
-      for (let screenY = 0; screenY < height; screenY++) {
-        // Map screen pixels to complex plane using the new calculated bounds
-        let zRe = minX + (screenX * range) / width;
-        let zIm = minY + (screenY * range) / height;
+    const t0 = Date.now();
+    let idx = 0;
+
+    for (let y = 0; y < height; y++) {
+      const zImStart = bounds.yMin + y * yStep;
+
+      for (let x = 0; x < width; x++) {
+        let zRe = bounds.xMin + x * xStep;
+        let zIm = zImStart;
 
         let iter = 0;
         while (zRe * zRe + zIm * zIm <= 4.0 && iter < maxIterations) {
@@ -42,9 +34,12 @@ class FractalEngine {
 
         const intensity =
           iter === maxIterations ? 0 : Math.floor((iter * 255) / maxIterations);
-        points.push({ x: screenX, y: screenY, intensity });
+
+        points[idx++] = { x, y, intensity };
       }
     }
+
+    console.log(`[Node Engine] ${width * height} points in ${Date.now() - t0}ms`);
     return points;
   }
 

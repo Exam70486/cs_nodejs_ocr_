@@ -117,15 +117,21 @@ app.get("/api/OpenCv/generateJuliaImage", async (req, res) => {
 });
 
 app.get("/api/fractal/julia", (req, res) => {
-  // Frontend sends 'zoominout' (lowercase) — match it exactly
-  const zoomInOut = req.query.zoominout === "true";
+  const xMin = parseFloat(req.query.xMin);
+  const xMax = parseFloat(req.query.xMax);
+  const yMin = parseFloat(req.query.yMin);
+  const yMax = parseFloat(req.query.yMax);
+  const maxIterations = parseInt(req.query.maxIterations, 10) || 500;
 
-  // Default zoomStep to 1 if missing or zero
-  const zoomStep = parseFloat(req.query.zoomStep) || 1.0;
+  // Fallback to Julia's default window if bounds are missing/invalid —
+  // mirrors Angular's DEFAULT_BOUNDS_JULIA = { xMin:-1.5, xMax:1.5, yMin:-1.5, yMax:1.5 }
+  const bounds = [xMin, xMax, yMin, yMax].every(Number.isFinite)
+    ? { xMin, xMax, yMin, yMax }
+    : { xMin: -1.5, xMax: 1.5, yMin: -1.5, yMax: 1.5 };
 
-  console.log(`Generating Julia: zoomIn=${zoomInOut}, step=${zoomStep}`);
+  console.log(`Generating Julia: bounds=${JSON.stringify(bounds)}, maxIter=${maxIterations}`);
 
-  const points = engine.generateJulia(zoomInOut, zoomStep);
+  const points = engine.generateJulia(bounds, maxIterations);
   res.json(points);
 });
 
