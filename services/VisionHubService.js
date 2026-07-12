@@ -1,7 +1,25 @@
 const Tesseract = require("tesseract.js");
 const fs = require("fs");
 const path = require("path");
-const cv = require("@u4/opencv4nodejs");
+
+// Lazy-load opencv4nodejs — it requires a native compiled binary which may
+// not be available in all deployment environments (e.g. Render free tier).
+// All pure-math fractal methods and Tesseract OCR work without it.
+let cv = null;
+try {
+  cv = require("@u4/opencv4nodejs");
+  console.log("opencv4nodejs loaded successfully.");
+} catch (e) {
+  console.warn("opencv4nodejs native module not available. Shape detection and OpenCV fractal endpoints will return 503.", e.message);
+}
+
+// Helper: sends a 503 when cv is not available
+function cvUnavailable(res) {
+  res.status(503).json({
+    success: false,
+    error: "OpenCV native module not available in this environment.",
+  });
+}
 
 class VisionHubService {
   //============================================================================
@@ -69,7 +87,7 @@ class VisionHubService {
   }
 
   //============================================================================
-  // COMPUTER VISION (CV) FUNCTIONS - Using opencv.js
+  // COMPUTER VISION (CV) FUNCTIONS - Requires native opencv4nodejs
   //============================================================================
 
   static async detectShapes(imagePath) {
@@ -112,6 +130,7 @@ class VisionHubService {
   }
 
   static async doCv(base64Image, res) {
+    if (!cv) return cvUnavailable(res);
     try {
       const { filePath } = await this.saveBase64Image(base64Image);
       const detectedShapes = await this.detectShapes(filePath);
@@ -134,10 +153,11 @@ class VisionHubService {
   }
 
   //============================================================================
-  // LEGACY OPENCV FRACTAL GENERATION (Keep for old configurations)
+  // LEGACY OPENCV FRACTAL GENERATION (Requires native opencv4nodejs)
   //============================================================================
 
   static getJuliaColor(iteration, maxIterations) {
+    if (!cv) return null;
     if (iteration === maxIterations) return new cv.Vec3(0, 0, 0);
     const t = iteration / maxIterations;
     const r = Math.floor(9 * (1 - t) * t * t * t * 255);
@@ -183,26 +203,12 @@ class VisionHubService {
     return new cv.Mat(height, width, cv.CV_8UC3, data);
   }
 
-  static async doGenerateJulia(
-    width,
-    height,
-    maxIterations,
-    cReal,
-    cImag,
-    res
-  ) {
+  static async doGenerateJulia(width, height, maxIterations, cReal, cImag, res) {
+    if (!cv) return cvUnavailable(res);
     try {
-      const img = this.generateJulia(
-        width,
-        height,
-        maxIterations,
-        cReal,
-        cImag
-      );
+      const img = this.generateJulia(width, height, maxIterations, cReal, cImag);
       const imageBuffer = await cv.imencodeAsync(".png", img);
-      const base64Image = `data:image/png;base64,${imageBuffer.toString(
-        "base64"
-      )}`;
+      const base64Image = `data:image/png;base64,${imageBuffer.toString("base64")}`;
       res.status(200).json({
         success: true,
         message: "Fractal generated successfully",
@@ -213,22 +219,10 @@ class VisionHubService {
     }
   }
 
-  static async generateJuliaImage(
-    width,
-    height,
-    maxIterations,
-    cReal,
-    cImag,
-    res
-  ) {
+  static async generateJuliaImage(width, height, maxIterations, cReal, cImag, res) {
+    if (!cv) return cvUnavailable(res);
     try {
-      const img = this.generateJulia(
-        width,
-        height,
-        maxIterations,
-        cReal,
-        cImag
-      );
+      const img = this.generateJulia(width, height, maxIterations, cReal, cImag);
       const imageBuffer = await cv.imencodeAsync(".png", img);
       res.set("Content-Type", "image/png");
       res.send(imageBuffer);
@@ -241,17 +235,7 @@ class VisionHubService {
   // PURE MATHEMATICAL FRACTAL SEEDING (No OpenCV Dependency)
   //============================================================================
 
-  /**
-   * Generates a raw iteration matrix for the Julia Set
-   */
-  static generateJuliaPureMath(
-    width,
-    height,
-    maxIterations,
-    cReal,
-    cImag,
-    bounds
-  ) {
+  static generateJuliaPureMath(width, height, maxIterations, cReal, cImag, bounds) {
     const matrix = [];
     const xMin = parseFloat(bounds.xMin);
     const xMax = parseFloat(bounds.xMax);
@@ -271,10 +255,7 @@ class VisionHubService {
         let zImag = cy;
         let iteration = 0;
 
-        while (
-          zReal * zReal + zImag * zImag < 4.0 &&
-          iteration < maxIterations
-        ) {
+        while (zReal * zReal + zImag * zImag < 4.0 && iteration < maxIterations) {
           const nextZReal = zReal * zReal - zImag * zImag + cReal;
           const nextZImag = 2 * zReal * zImag + cImag;
           zReal = nextZReal;
@@ -282,8 +263,6 @@ class VisionHubService {
           iteration++;
         }
 
-        // If it escapes instantly at the very boundary edges, flag it explicitly as 1
-        // instead of 0 to stop the client from confusing it with the inner core.
         row[x] =
           iteration === 0 && zReal * zReal + zImag * zImag >= 4.0
             ? 1
@@ -294,9 +273,6 @@ class VisionHubService {
     return matrix;
   }
 
-  /**
-   * Generates a raw iteration matrix for the Mandelbrot Set
-   */
   static generateMandelbrotPureMath(width, height, maxIterations, bounds) {
     const matrix = [];
     const xMin = parseFloat(bounds.xMin);
@@ -317,10 +293,7 @@ class VisionHubService {
         let zImag = 0.0;
         let iteration = 0;
 
-        while (
-          zReal * zReal + zImag * zImag < 4.0 &&
-          iteration < maxIterations
-        ) {
+        while (zReal * zReal + zImag * zImag < 4.0 && iteration < maxIterations) {
           const nextZReal = zReal * zReal - zImag * zImag + cx;
           const nextZImag = 2 * zReal * zImag + cy;
           zReal = nextZReal;
@@ -337,9 +310,6 @@ class VisionHubService {
     return matrix;
   }
 
-  /**
-   * Generates an array of calculated coordinates representing the Barnsley Fern point-cloud
-   */
   static generateBarnsleyFernPureMath(totalPoints = 50000) {
     const pointsArray = [];
     let x = 0.0;

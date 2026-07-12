@@ -92,23 +92,26 @@ sudo apt-get install libopencv-dev
 # docker must be installed on desktop. it was from codespaces, only visual studio code extensions was installed
 1) docker buildx build -t cs_nodejs_ocr .
 
+# create a tag previous to publish
+3) docker tag cs_nodejs_ocr:latest apereznwogmail/cs_nodejs_ocr:latest
+
+
 # list images built
 2) docker image ls 
-
-# create a tag previous to publish
-3) docker tag java2_ee_sb_demo:latest apereznwogmail/java2_ee_sb_demo:latest
 
 # log into docker for publish
 # get PAT from https://app.docker.com/accounts/apereznwogmail/settings/personal-access-tokens
 ## must return 'Login Succeeded'
 4) echo "YOUR_PAT_HERE" | docker login --username apereznwogmail --password-stdin
+dckr_pat_EzzfbCcs9SE7rQjGbKaGsUGnc1w
+
 
 # publish in docker hub
 # https://hub.docker.com/
-5) docker push apereznwogmail/java2_ee_sb_demo:latest 
+5) docker push apereznwogmail/cs_nodejs_ocr:latest
 
 # URL FOR RENDER : https://dashboard.render.com/
-6) docker.io/apereznwogmail/java2_ee_sb_demo:latest
+6) docker.io/apereznwogmail/cs_nodejs_ocr:latest
 
 --------------------------
 --------------------------
@@ -123,7 +126,7 @@ git add * && git commit -m"fractal changes" && git push && git pull
 docker buildx build -t cs_nodejs_ocr .
 
 ## 2. docker tag my-spring-boot-app yourusername/your-repo:latest
-docker tag java2_ee_sb_demo:latest apereznwogmail/java2_ee_sb_demo:latest
+docker tag cs_nodejs_ocr:latest apereznwogmail/cs_nodejs_ocr:latest
 
 ## 3. log into docker for publish
 ## get/create PAT from https://app.docker.com/accounts/apereznwogmail/settings/personal-access-tokens
@@ -131,7 +134,7 @@ docker tag java2_ee_sb_demo:latest apereznwogmail/java2_ee_sb_demo:latest
 echo "YOUR_PAT_HERE" | docker login --username apereznwogmail --password-stdin
 
 ## 4. docker push yourusername/your-repo:latest
-docker push apereznwogmail/java2_ee_sb_demo:latest 
+docker push apereznwogmail/cs_nodejs_ocr:latest 
 
 --------------------------
 --------------------------
