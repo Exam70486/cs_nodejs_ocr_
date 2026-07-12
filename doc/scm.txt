@@ -27,7 +27,10 @@ git remote set-url origin https://Exam70486:ghp_HL1YUC7KDaFIWWDoVxSlMENgj43PdZ42
 
 (allow secrets when needed)
 
-
+git add * 
+git commit -m"docker cchanges" -a 
+git push 
+git pull 
 
 ################################################
 ## NODE.JS   
