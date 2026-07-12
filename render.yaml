@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: cs-nodejs-ocr
+    runtime: docker
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+
+    envVars:
+      - key: PORT
+        sync: false   # Render sets this automatically
+
+      # If you use Google Cloud Vision API, add your credentials here:
+      # - key: GOOGLE_APPLICATION_CREDENTIALS_JSON
+      #   sync: false
+
+    healthCheckPath: /
+    autoDeploy: true

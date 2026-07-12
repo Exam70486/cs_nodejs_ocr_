@@ -83,7 +83,7 @@ sudo apt-get install libopencv-dev
 0) https://github.com/codespaces
 
 # docker must be installed on desktop. it was from codespaces, only visual studio code extensions was installed
-1) docker build -t java2_ee_sb_demo .
+1) docker buildx build -t cs_nodejs_ocr .
 
 # list images built
 2) docker image ls 
@@ -113,8 +113,7 @@ sudo apt-get install libopencv-dev
 git add * && git commit -m"fractal changes" && git push && git pull 
 
 ## 1. docker build -t my-spring-boot-app .
-docker build -t java2_ee_sb_demo .
-docker buildx build -t java2_ee_sb_demo .
+docker buildx build -t cs_nodejs_ocr .
 
 ## 2. docker tag my-spring-boot-app yourusername/your-repo:latest
 docker tag java2_ee_sb_demo:latest apereznwogmail/java2_ee_sb_demo:latest
