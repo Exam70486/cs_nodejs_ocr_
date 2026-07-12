@@ -7,10 +7,11 @@ const path = require("path");
 // All pure-math fractal methods and Tesseract OCR work without it.
 let cv = null;
 try {
-  cv = require("@u4/opencv4nodejs");
-  console.log("opencv4nodejs loaded successfully.");
+  //cv = require("@u4/opencv4nodejs");
+  cv = require("opencv.js");
+  console.log("opencv.js loaded successfully.");
 } catch (e) {
-  console.warn("opencv4nodejs native module not available. Shape detection and OpenCV fractal endpoints will return 503.", e.message);
+  console.warn("opencv.js native module not available. Shape detection and OpenCV fractal endpoints will return 503.", e.message);
 }
 
 // Helper: sends a 503 when cv is not available

@@ -114,7 +114,7 @@ sudo apt-get install libopencv-dev
 ## must return 'Login Succeeded'
 4) echo "YOUR_PAT_HERE" | docker login --username apereznwogmail --password-stdin
 dckr_pat_EzzfbCcs9SE7rQjGbKaGsUGnc1w
-
+dckr_pat_FW_Sfgm-nH6lqV29SEmRzRnz_IA
 
 # publish in docker hub
 # https://hub.docker.com/
