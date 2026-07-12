@@ -22,11 +22,10 @@ git push -u origin main
 ################################################
 
 unset GITHUB_TOKEN
-git remote set-url origin https://aperezNWO:NEW_TOKEN_HERE@github.com/aperezNWO/JAVA2_EE_SB_DEMO.git
 
 git remote set-url origin https://Exam70486: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@github.com/Exam70486/cs_nodejs_ocr_.git
 
-
+(allow secrets when needed)
 
 
 
