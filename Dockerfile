@@ -1,69 +1,34 @@
-# ─── Node.js + OpenCV + Tesseract OCR ────────────────────────────────────────
-# opencv4nodejs compiles native C++ bindings, so we need build tools.
-# We use a Debian-based image (not Alpine) because OpenCV build requires
-# many system libs that are painful to get on Alpine.
-
-FROM node:20-bullseye AS builder
+# ─── Node.js + OpenCV (pre-built) + Tesseract OCR ────────────────────────────
+FROM node:20-bullseye
 
 WORKDIR /app
 
-# System dependencies needed to compile opencv4nodejs native bindings
+# 1. Install system OpenCV 4.x libs + Tesseract (no compilation needed)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    cmake \
-    git \
-    libgtk2.0-dev \
-    pkg-config \
-    libavcodec-dev \
-    libavformat-dev \
-    libswscale-dev \
-    libjpeg-dev \
-    libpng-dev \
-    libtiff-dev \
-    python3 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy package files first (layer cache)
-COPY package.json package-lock.json* ./
-
-# Install all dependencies (opencv4nodejs will compile OpenCV here — takes a while)
-RUN npm ci --build-from-source
-
-# Copy the rest of the source
-COPY . .
-
-# ─── Runtime image ────────────────────────────────────────────────────────────
-FROM node:20-bullseye-slim AS runner
-
-WORKDIR /app
-
-# Runtime system libs needed by OpenCV and Tesseract
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgtk2.0-0 \
-    libavcodec58 \
-    libavformat58 \
-    libswscale5 \
-    libjpeg62-turbo \
-    libpng16-16 \
-    libtiff5 \
+    libopencv-dev \
     tesseract-ocr \
     tesseract-ocr-eng \
+    python3 \
+    make \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Non-root user for security
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+# 2. Tell opencv4nodejs to use the system OpenCV instead of building from source
+ENV OPENCV4NODEJS_DISABLE_AUTOBUILD=1
+ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
 
-# Copy app + compiled node_modules from builder
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app .
+# 3. Copy package files and install (no --build-from-source, just node-gyp binding)
+COPY package.json package-lock.json* ./
+RUN npm ci
 
-# eng.traineddata is already in the repo root — Tesseract.js uses it directly
-# (system tesseract-ocr-eng above covers the native tesseract if used)
+# 4. Copy source
+COPY . .
 
-RUN chown -R appuser:appuser /app
+# 5. Non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser \
+    && chown -R appuser:appuser /app
 USER appuser
 
-# Render injects $PORT at runtime
 ENV PORT=3000
 EXPOSE 3000
 
