@@ -52,6 +52,7 @@ git pull
 ################################################
 
 pkill node
+
 node index.js 
 
 npm install --legacy-peer-deps --verbose 
