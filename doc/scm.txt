@@ -54,36 +54,7 @@ git pull
 pkill node
 node index.js 
 
-################################################
-## OPENCV   
-################################################
-
-# Step 1: Install OpenCV system library (done)
-sudo apt-get update
-sudo apt-get install libopencv-dev
-
-# Step 2: Install Node.js wrapper (MUST do this too!)
-
-    # Set the correct library path (adjust if your path is different)
-    export OPENCV_LIB_DIR=/usr/lib/x86_64-linux-gnu
-
-    # Also set include path
-    export OPENCV_INCLUDE_DIR=/usr/include/opencv4
-
-    # Clean reinstall
-    rm -rf package-lock.json
-    npm cache clean --force
-    export OPENCV4NODEJS_DISABLE_AUTOBUILD=1
-
-    # ⏳ This compiles OpenCV — takes 5–10 min the first time
-    npm install @u4/opencv4nodejs --verbose 
-
-    # in case of faluire remove the following entries from packages.json and try again previous step
-    "node-webcam": "^0.8.2",    
-    "node-ocr": "^0.8.2",
-
-    # try all installation
-    npm install
+npm install --legacy-peer-deps --verbose 
     
 ################################################    
 
