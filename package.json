@@ -1,5 +1,6 @@
 {
   "name": "cs_nodejs_ocr",
+  "type": "module",
   "version": "1.0.0.3",
   "main": "index.js",
   "dependencies": {
@@ -7,6 +8,15 @@
     "canvas": "^3.2.3",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1",
     "tesseract.js": "^7.0.0"
+  },
+  "allowScripts": {
+    "swagger-jsdoc@6.3.0": true,
+    "swagger-ui-express@5.0.1": true,
+    "tesseract.js@7.0.0": true,
+    "canvas@3.2.3": true,
+    "@scarf/scarf@1.4.0": true
   }
 }

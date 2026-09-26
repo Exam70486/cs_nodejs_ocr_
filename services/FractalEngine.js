@@ -1,4 +1,4 @@
-class FractalEngine {
+export class FractalEngine {
 
   // Mirrors Angular's FractalEngine._runEscapeTimeEngine exactly:
   // independent xStep/yStep derived from bounds, row-major (y-outer, x-inner) order.
@@ -143,4 +143,3 @@ class FractalEngine {
   }
 }
 
-module.exports = new FractalEngine();

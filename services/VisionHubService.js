@@ -1,7 +1,7 @@
-const Tesseract = require("tesseract.js");
-const fs = require("fs");
-const path = require("path");
-const { createCanvas, loadImage } = require("canvas");
+import Tesseract from "tesseract.js";
+import fs        from "fs";
+import path      from "path";
+import { createCanvas, loadImage } from "canvas";
 
 // ---------------------------------------------------------------------------
 // OpenCV via @techstark/opencv-js (pure WASM — no native compilation needed)
@@ -24,7 +24,7 @@ function cvUnavailable(res) {
   });
 }
 
-class VisionHubService {
+export class VisionHubService {
   //============================================================================
   // COMMON UTILITIES
   //============================================================================
@@ -403,4 +403,3 @@ class VisionHubService {
   }
 }
 
-module.exports = VisionHubService;

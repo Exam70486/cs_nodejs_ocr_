@@ -1,12 +1,16 @@
-// index.js
-const _express         = require("express");
-const app              = _express();
-const cors             = require("cors");
-const port             = process.env.PORT || 3000;   // Render injects $PORT at runtime 
-const VisionHubService = require("./services/VisionHubService");
-const engine           = require("./services/FractalEngine");
+import express            from "express";
+import cors               from "cors";
+import {VisionHubService} from "./services/VisionHubService.js";
+import {FractalEngine}    from './services/FractalEngine.js';
+import swaggerUi          from 'swagger-ui-express';
+import swaggerJsdoc       from 'swagger-jsdoc';
+import { readFileSync }   from 'fs';
+const packageJson         = JSON.parse(readFileSync(new URL('./package.json', import.meta.url)));
+const port                = process.env.PORT || 3000;   // Render injects $PORT at runtime 
+//
+const app      = express();
 
-app.use(_express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "10mb" }));
 app.use(cors());
 
 //////////////////////////////////////////////////
@@ -157,8 +161,28 @@ app.get('/getNodeVersion', (req, res) => {
     res.send(process.version);
 });
 
-const packageJson = require('./package.json');
-
+/**
+ * @openapi
+ * /getNodeWebServerVersion:
+ *   get:
+ *     summary: Get the server type and current version
+ *     description: Returns metadata reflecting the active express server and version from package.json
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 server:
+ *                   type: string
+ *                   example: express
+ *                 version:
+ *                   type: string
+ *                   example: 1.0.0.3
+ */
+// Server Framework Version Endpoint (Express version)
 app.get('/getNodeWebServerVersion', (req, res) => {
   res.json({
     server: "express",
@@ -166,7 +190,29 @@ app.get('/getNodeWebServerVersion', (req, res) => {
   });
 });
 /////////////////////////////////////////////////////////////////////////////////
-
+/**
+ * @openapi
+ * /health:
+ *   get:
+ *     summary: Health check endpoint
+ *     description: Verifies that the Node.js web server and container dependencies are running correctly.
+ *     tags:
+ *       - System
+ *     responses:
+ *       200:
+ *         description: Server is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "UP"
+ *                 timestamp:
+ *                   type: string
+ *                   example: "2026-09-26T13:03:20Z"
+ */
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "OK",
@@ -189,6 +235,35 @@ app.get("/health", (req, res) => {
     ],
   });
 });
+
+//---------------------------------------------------
+// SWAGGER SETUP
+//---------------------------------------------------
+
+// 1. Configure Swagger definition options
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Node.js DB & Utility API',
+      version: packageJson.version || '1.0.0',
+      description: 'API documentation generated via reflection on JSDoc comments',
+    },
+    servers: [
+      {
+        url: 'https://cs-nodejs-ocr-latest-scjg.onrender.com/',
+        description: 'render',
+      },
+    ],
+  },
+  // Points to files where Swagger JSDoc annotations are written (this file)
+  apis: ['./index.js'], 
+};
+
+const swaggerSpecs = swaggerJsdoc(swaggerOptions);
+
+// 2. Mount the Swagger UI explorer route
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 //////////////////////////////////////////////////
 // DRIVER CODE
