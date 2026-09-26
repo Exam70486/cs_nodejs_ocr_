@@ -11,8 +11,13 @@ let cvReady = false;
 
 async function getCV() {
   if (cvReady) return cv;
-  // @techstark/opencv-js calls factory() immediately and exports the Promise
-  cv = await require("@techstark/opencv-js");
+  
+  // Dynamic import acts as the ESM equivalent of require()
+  const cvModule = await import("@techstark/opencv-js");
+  
+  // Handle default exports or direct factory resolution
+  cv = await (cvModule.default || cvModule);
+  
   cvReady = true;
   return cv;
 }
