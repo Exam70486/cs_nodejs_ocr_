@@ -8,8 +8,8 @@ import { readFileSync }   from 'fs';
 const packageJson         = JSON.parse(readFileSync(new URL('./package.json', import.meta.url)));
 const port                = process.env.PORT || 3000;   // Render injects $PORT at runtime 
 //
-const app      = express();
-
+const app            = express();
+const fractalEngine  = new FractalEngine();
 app.use(express.json({ limit: "10mb" }));
 app.use(cors());
 
@@ -127,7 +127,7 @@ app.get("/api/fractal/julia", (req, res) => {
     : { xMin: -1.5, xMax: 1.5, yMin: -1.5, yMax: 1.5 };
 
   console.log(`Generating Julia: bounds=${JSON.stringify(bounds)}, maxIter=${maxIterations}`);
-  const points = engine.generateJulia(bounds, maxIterations);
+  const points = fractalEngine.generateJulia(bounds, maxIterations);
   res.json(points);
 });
 
@@ -143,12 +143,12 @@ app.get("/api/fractal/mandelbrot", (req, res) => {
     : { xMin: -2.0, xMax: 1.0, yMin: -1.2, yMax: 1.2 };
 
   console.log(`Generating Mandelbrot: bounds=${JSON.stringify(bounds)}, maxIter=${maxIterations}`);
-  const points = engine.generateMandelbrot(bounds, maxIterations);
+  const points = fractalEngine.generateMandelbrot(bounds, maxIterations);
   res.json(points);
 });
 
 app.get("/api/fractal/leaf", (req, res) => {
-  const points = engine.generateLeaf();
+  const points = fractalEngine.generateLeaf();
   res.json(points);
 });
 
