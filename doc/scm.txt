@@ -126,7 +126,10 @@ df -h . && du -h --max-depth=1 | sort -hr
 --------------------------
 
 ## 0. save changes on git.
-git add * && git commit -m"[Application CS_NodeJs_OCR] - v[1.0.0]" -m"1) health() endpoint" && git push && git pull
+git add * 
+git commit -m"[Application CS_NodeJs_OCR] - v[1.0.1]" -m"1) health() endpoint" 
+git push 
+git pull
 
 ## 1. docker build -t my-spring-boot-app .
 docker buildx build -t cs_nodejs_ocr .

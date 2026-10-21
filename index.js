@@ -13,6 +13,72 @@ const fractalEngine  = new FractalEngine();
 app.use(express.json({ limit: "10mb" }));
 app.use(cors());
 
+//---------------------------------------------------
+// ENDPOINTS DICTIONARY (Requirement a)
+//---------------------------------------------------
+const endpoints = {
+  ping: {
+    name: "Ping Check",
+    path: "/ping",
+    description: "Returns a zero KB (204 No Content) response"
+  },
+  ocrUpload: {
+    name: "OCR Upload",
+    path: "/api/OCR/uploadOCR",
+    description: "Tesseract -- (ocr / text extraction)"
+  },
+  openCvUpload: {
+    name: "OpenCV Upload",
+    path: "/api/OpenCv/uploadCV",
+    description: "OpenCv -- (shape detection)"
+  },
+  openCvJulia: {
+    name: "OpenCV Julia Demo",
+    path: "/api/OpenCv/generateJulia",
+    description: "OpenCv -- (fractal generation)"
+  },
+  openCvJuliaImage: {
+    name: "OpenCV Julia Image",
+    path: "/api/OpenCv/generateJuliaImage",
+    description: "OpenCv -- (fractal generation)"
+  },
+  fractalJulia: {
+    name: "JS Fractal Julia",
+    path: "/api/fractal/julia",
+    description: "Javascript -- (fractal generation)"
+  },
+  fractalMandelbrot: {
+    name: "JS Fractal Mandelbrot",
+    path: "/api/fractal/mandelbrot",
+    description: "Javascript -- (fractal generation)"
+  },
+  fractalLeaf: {
+    name: "JS Fractal Leaf",
+    path: "/api/fractal/leaf",
+    description: "Javascript -- (fractal generation)"
+  },
+  getNodeVersion: {
+    name: "Node.js Version",
+    path: "/getNodeVersion",
+    description: "Get backend version"
+  },
+  getNodeWebServerVersion: {
+    name: "Web Server Version",
+    path: "/getNodeWebServerVersion",
+    description: "Get express version"
+  },
+  getAppVersion: {
+    name: "App Version",
+    path: "/getAppVersion",
+    description: "Get Application version"
+  },
+  health: {
+    name: "Health Check",
+    path: "/health",
+    description: "Service health check & route catalog"
+  }
+};
+
 //////////////////////////////////////////////////
 // MIDDLEWARE: HTTP Request Logger for Render
 //////////////////////////////////////////////////
@@ -27,17 +93,17 @@ app.use((req, res, next) => {
 });
 
 //////////////////////////////////////////////////
-// PING ENDPOINT: Returns zero kb data
+// PING ENDPOINT (Requirement b)
 //////////////////////////////////////////////////
-app.get("/ping", (req, res) => {
+app.get(endpoints.ping.path, (req, res) => {
   res.status(204).send(); // 204 No Content responds with zero bytes of data
 });
 
 //////////////////////////////////////////////////
-// TESSERACT  - OCR
+// TESSERACT  - OCR (Requirement b)
 //////////////////////////////////////////////////
 
-app.post("/api/OCR/uploadOCR", async (req, res) => {
+app.post(endpoints.ocrUpload.path, async (req, res) => {
   try {
     const { base64Image } = req.body;
     if (!base64Image) {
@@ -51,10 +117,10 @@ app.post("/api/OCR/uploadOCR", async (req, res) => {
 });
 
 //////////////////////////////////////////////////
-// OPENCV - SHAPES
+// OPENCV - SHAPES (Requirement b)
 //////////////////////////////////////////////////
 
-app.post("/api/OpenCv/uploadCV", async (req, res) => {
+app.post(endpoints.openCvUpload.path, async (req, res) => {
   try {
     const { base64Image } = req.body;
     if (!base64Image) {
@@ -68,10 +134,10 @@ app.post("/api/OpenCv/uploadCV", async (req, res) => {
 });
 
 //////////////////////////////////////////////////
-// OPENCV - FRACTAL DEMO (legacy — returns 503 if native cv unavailable)
+// OPENCV - FRACTAL DEMO (Requirement b)
 //////////////////////////////////////////////////
 
-app.get("/api/OpenCv/generateJulia", async (req, res) => {
+app.get(endpoints.openCvJulia.path, async (req, res) => {
   try {
     const MAX_WIDTH = 800;
     const MAX_HEIGHT = 600;
@@ -91,7 +157,7 @@ app.get("/api/OpenCv/generateJulia", async (req, res) => {
   }
 });
 
-app.get("/api/OpenCv/generateJuliaImage", async (req, res) => {
+app.get(endpoints.openCvJuliaImage.path, async (req, res) => {
   try {
     const MAX_WIDTH = 800;
     const MAX_HEIGHT = 600;
@@ -112,10 +178,10 @@ app.get("/api/OpenCv/generateJuliaImage", async (req, res) => {
 });
 
 //////////////////////////////////////////////////
-// PURE JS FRACTALS
+// PURE JS FRACTALS (Requirement b)
 //////////////////////////////////////////////////
 
-app.get("/api/fractal/julia", (req, res) => {
+app.get(endpoints.fractalJulia.path, (req, res) => {
   const xMin = parseFloat(req.query.xMin);
   const xMax = parseFloat(req.query.xMax);
   const yMin = parseFloat(req.query.yMin);
@@ -131,7 +197,7 @@ app.get("/api/fractal/julia", (req, res) => {
   res.json(points);
 });
 
-app.get("/api/fractal/mandelbrot", (req, res) => {
+app.get(endpoints.fractalMandelbrot.path, (req, res) => {
   const xMin = parseFloat(req.query.xMin);
   const xMax = parseFloat(req.query.xMax);
   const yMin = parseFloat(req.query.yMin);
@@ -147,17 +213,16 @@ app.get("/api/fractal/mandelbrot", (req, res) => {
   res.json(points);
 });
 
-app.get("/api/fractal/leaf", (req, res) => {
+app.get(endpoints.fractalLeaf.path, (req, res) => {
   const points = fractalEngine.generateLeaf();
   res.json(points);
 });
 
 //////////////////////////////////////////////////
-// DIAGNOSTICS
-//////////////////////////////////////////////////
+// DIAGNOSTICS (Requirement b)
+//------------------------------------------------//
 
-// New Endpoint: Returns the current Node.js version
-app.get('/getNodeVersion', (req, res) => {
+app.get(endpoints.getNodeVersion.path, (req, res) => {
     res.send(process.version);
 });
 
@@ -182,15 +247,14 @@ app.get('/getNodeVersion', (req, res) => {
  *                   type: string
  *                   example: 1.0.0.3
  */
-// Server Framework Version Endpoint (Express version)
-app.get('/getNodeWebServerVersion', (req, res) => {
+app.get(endpoints.getNodeWebServerVersion.path, (req, res) => {
   res.json({
     server: "express",
-    version: packageJson.version // Looks for "version": "1.0.0.3" in package.json
+    version: packageJson.version
   });
 });
 
-app.get('/getAppVersion', (req, res) => {
+app.get(endpoints.getAppVersion.path, (req, res) => {
   res.send('1.0.1');
 });
 
@@ -210,50 +274,29 @@ app.get('/getAppVersion', (req, res) => {
  *           application/json:
  *             schema:
  *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: "UP"
- *                 timestamp:
- *                   type: string
- *                   example: "2026-09-26T13:03:20Z"
  */
-app.get("/health", (req, res) => {
+app.get(endpoints.health.path, (req, res) => {
   res.status(200).json({
-    status: "OK",
-    service: "VisionHub",
-    nodeVersion: process.version,
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-    endpoints: [
-      "GET  /ping                                   - Returns zero KB (204 No Content) response",
-      "POST /api/OCR/uploadOCR                - Tesseract  -- (ocr / text extraction) ",
-      "POST /api/OpenCv/uploadCV              - OpenCv     -- (shape detection) ",
-      "GET  /api/OpenCv/generateJulia         - OpenCv     -- (fractal generation) ",
-      "GET  /api/OpenCv/generateJuliaImage    - OpenCv     -- (fractal generation) ",
-      "GET  /api/fractal/julia                - Javascript -- (fractal generation) ",
-      "GET  /api/fractal/mandelbrot           - Javascript -- (fractal generation) ",
-      "GET  /api/fractal/leaf                 - Javascript -- (fractal generation) ",
-      "GET  /getAppVersion                    - Get Application version",
-      "GET  /getNodeVersion                   - Get backend version",
-      "GET  /getNodeWebServerVersion          - Get express version ",
-      "GET  /health                           - Service health check & route catalog ",
-    ],
+    // c.1) Server status message section
+    serverStatus: {
+      serverName: "VisionHub",
+      version: packageJson.version || "1.0.0",
+      note: "server working",
+      status: "OK",
+      nodeVersion: process.version,
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString()
+    },
+    // c.2) Endpoints dictionary section
+    endpoints: endpoints
   });
 });
 
 //---------------------------------------------------
 // SWAGGER SETUP
 //---------------------------------------------------
-//---------------------------------------------------
-// SWAGGER SETUP
-//---------------------------------------------------
-
-// Dynamically infer server URL: checks for Render's environment URL first,
-// otherwise falls back to localhost using your configured port variable.
 const inferredServerUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${process.env.PORT || port}`;
 
-// 1. Configure Swagger definition options
 const swaggerOptions = {
   definition: {
     openapi: '3.0.0',
@@ -269,13 +312,10 @@ const swaggerOptions = {
       },
     ],
   },
-  // Points to files where Swagger JSDoc annotations are written (this file)
   apis: ['./index.js'],
 };
 
 const swaggerSpecs = swaggerJsdoc(swaggerOptions);
-
-// 2. Mount the Swagger UI explorer route
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 //////////////////////////////////////////////////
